@@ -1,0 +1,15 @@
+
+{
+  "name": "sap-btp-governance",
+  "version": "1.0.0",
+  "description": "Reusable GitHub Actions governance checks for SAP BTP CAP and UI5 projects",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node scripts/governance-check.js",
+    "check:repository": "node scripts/repository-check.js"
+  }
+}

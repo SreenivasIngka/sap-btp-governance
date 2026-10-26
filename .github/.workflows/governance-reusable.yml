@@ -1,0 +1,65 @@
+
+name: SAP BTP Governance
+
+on:
+  workflow_call:
+    inputs:
+      project-type:
+        description: "CAP, UI5, or both"
+        required: false
+        type: string
+        default: both
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    name: SAP BTP Governance Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          path: application
+
+      - name: Checkout governance rules and scripts
+        uses: actions/checkout@v4
+        with:
+          repository: SreenivasIngka/sap-btp-governance
+          ref: v1.0.0
+          path: governance
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate repository governance
+        working-directory: governance
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_HEAD_BRANCH: ${{ github.head_ref }}
+          PR_BASE_BRANCH: ${{ github.base_ref }}
+          APPLICATION_DIR: ${{ github.workspace }}/application
+          COE_REPOSITORY_NAME_REGEX: ${{ vars.COE_REPOSITORY_NAME_REGEX }}
+        run: node scripts/repository-check.js
+
+      - name: Check CAP project structure
+        if: inputs.project-type == 'cap' || inputs.project-type == 'both'
+        working-directory: application
+        run: |
+          if [ ! -d db ] && [ ! -d srv ]; then
+            echo "::error::CAP project structure not detected"
+            exit 1
+          fi
+
+      - name: Check UI5 project structure
+        if: inputs.project-type == 'ui5' || inputs.project-type == 'both'
+        working-directory: application
+        run: |
+          if [ ! -f webapp/manifest.json ]; then
+            echo "::error::Missing webapp/manifest.json"
+            exit 1
+          fi
